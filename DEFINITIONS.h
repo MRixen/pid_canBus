@@ -1,9 +1,9 @@
 #define di_powerOn 5
 #define di_mcp2515_int_rec 7
-#define ai_motorAngle A0
 
-#define do_motorDirection1 4
-#define do_motorDirection2 5
+#define do_motorDirection1 3
+//#define do_motorDirection2 4
+
 #define do_enableController 6
 #define do_csMcp2515 8
 #define do_pwm 9

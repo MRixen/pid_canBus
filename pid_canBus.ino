@@ -91,7 +91,7 @@ void setup()
 	pinMode(LED_BUILTIN, OUTPUT);
 	pinMode(di_powerOn, INPUT);
 	pinMode(do_motorDirection1, OUTPUT);
-	pinMode(do_motorDirection2, OUTPUT);
+	//pinMode(do_motorDirection2, OUTPUT);
 	pinMode(do_enableController, OUTPUT);
 
 	// Init I/Os
@@ -228,13 +228,14 @@ void loop()
 
 			// Write actual motor position as ref pos to eeprom (byte 0 and 1)
 			// TODO: Save negative or positive sign
-			Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
 
-			while (Wire.available()) {
-				motorAngle = Wire.read(); // receive a byte as character
-				Serial.print("Ref pos from i2c: ");
-				Serial.println(motorAngle);
-			}
+			//Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
+
+			//while (Wire.available()) {
+			//	motorAngle = Wire.read(); // receive a byte as character
+			//	Serial.print("Ref pos from i2c: ");
+			//	Serial.println(motorAngle);
+			//}
 
 			EEPROM.update(eeprom_addr_ref_pos_1, lowByte(motorAngle));
 			EEPROM.update(eeprom_addr_ref_pos_2, highByte(motorAngle));
@@ -268,13 +269,15 @@ void loop()
 
 			lockAction = true;
 			// Write actual motor position to eeprom
-			Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
 
-			while (Wire.available()) {
-				motorAngle = Wire.read(); // receive a byte as character
-				Serial.print("Act pos from i2c: ");
-				Serial.println(motorAngle);
-			}
+			//Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
+
+			//while (Wire.available()) {
+			//	motorAngle = Wire.read(); // receive a byte as character
+			//	Serial.print("Act pos from i2c: ");
+			//	Serial.println(motorAngle);
+			//}
+
 			EEPROM.update(eeprom_addr_act_pos_1, lowByte(motorAngle));
 			EEPROM.update(eeprom_addr_act_pos_2, highByte(motorAngle));
 
@@ -315,6 +318,10 @@ void loop()
 			soll_motorAngle.bytes[0] = incoming_data[in_angle_2];
 			soll_motorAngle.bytes[1] = incoming_data[in_angle_1];
 			soll_motor_angle_temp = soll_motorAngle.data + ref_pos.data;
+
+			// Set sign for the soll angle value (0 negative / 1 positive)
+			if (incoming_data[in_motorDir] == 0) digitalWrite(do_motorDirection1, LOW);
+			else digitalWrite(do_motorDirection1, HIGH);
 
 			// Send soll angle via I2C bus
 			// TODO: Send 2 bytes of soll angle data
