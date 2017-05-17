@@ -7,7 +7,7 @@
 
 // ------------------------------------
 // Controlling motors with id 
-int motorId = 6; // Motor id (its NOT possible to use the same idetifier for two devices in the bus
+int motorId = 1; // Motor id (its NOT possible to use the same idetifier for two devices in the bus
 // ------------------------------------
 
 // !!!! NOTE !!!!
@@ -100,31 +100,7 @@ void setup()
 	// Read input signal for storing actual encoder position
 	di_powerOn_state_old = digitalRead(di_powerOn);
 
-	// Reset eeprom if user select it
-	bool eeprom_init_state_ok = true;
 
-	// Reset eeprom at first start
-	if (EEPROM.read(5) != 0) // At first start this all eeprom bytes are 255
-	{
-		// Write zeros
-		for (size_t i = 0; i < 6; i++) EEPROM.write(i, 0);  //EEPROM.update(i, 0);
-
-		// Check written data
-		for (size_t i = 0; i < 6; i++) if (EEPROM.read(i) != 0) eeprom_init_state_ok = false;
-
-		// Show write state as blink code
-		while (!eeprom_init_state_ok) blinkErrorCode(error_eeprom_reset, true, false);
-
-		// Stop program execution
-		Serial.println("Ready reset eeprom.");
-	}
-
-	// Check error on eeprom writing process (ref or act position)
-	int value_eeprom = EEPROM.read(eeprom_addr_error);
-	if (value_eeprom != error_ok) {
-		// WHen there is an error stop the following operations and set the specific error code
-		while (true) blinkErrorCode(value_eeprom, true, false);
-	}
 
 	// Configure SPI
 	SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE3));
@@ -138,27 +114,6 @@ void setup()
 	mcp2515_init_tx_buffer1(REGISTER_TXB1SIDL_VALUE, REGISTER_TXB1SIDH_VALUE, BYTES_TO_SEND);
 	mcp2515_init_tx_buffer2(REGISTER_TXB2SIDL_VALUE, REGISTER_TXB2SIDH_VALUE, BYTES_TO_SEND);
 
-	// Read last encoder value from eeprom
-	ist_motorAngle.bytes[0] = EEPROM.read(eeprom_addr_act_pos_1);
-	ist_motorAngle.bytes[1] = EEPROM.read(eeprom_addr_act_pos_2);
-	encoderValue = ist_motorAngle.data;
-
-	// TODO: Validate act pos value (maybe flip the bytes)
-	if (debugMode) {
-		Serial.print("encoderValue last: ");
-		Serial.println(encoderValue);
-	}
-
-	// Read ref pos value from eeprom
-	ref_pos.bytes[0] = EEPROM.read(eeprom_addr_ref_pos_1);
-	ref_pos.bytes[1] = EEPROM.read(eeprom_addr_ref_pos_2);
-
-	// TODO: Validate ref pos value (maybe flip the bytes)
-	if (debugMode) {
-		Serial.print("ref_pos.data last: ");
-		Serial.println(ref_pos.data);
-	}
-
 	// Init
 	soll_motorAngle.data = 0;
 
@@ -171,8 +126,9 @@ void setup()
 	// TODO:
 	// Turn green led on to show that everything was inititalized and maybe ok
 
-	Wire.begin(); // join i2c bus (address optional for master)
+	Wire.begin(I2C_ID_CAN_BUS); // join i2c bus (address optional for master)
 }
+
 
 void loop()
 {
@@ -204,6 +160,15 @@ void loop()
 			for (size_t i = 0; i < BYTES_TO_SEND; i++) outgoing_data[i] = 0;
 			// Send motor id every time as alive flag
 			outgoing_data[out_motorId] = motorId;
+
+			// Send data (1. byte: soll_angle, 2. byte: save-action)
+			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
+			i2c_data_out[0] = 0;
+			i2c_data_out[1] = 0;
+
+			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
+			Wire.write(i2c_data_out, 2);
+			Wire.endTransmission();
 		}
 
 		// Check incoming action and set outgoing package
@@ -223,76 +188,29 @@ void loop()
 		// Work on action <saveRefPosToEeprom>
 		if ((!lockAction) & (incoming_data[in_action] == action_saveRefPosToEeprom))
 		{
-			// Lock action to prevent simultan call
-			lockAction = true;
+				Serial.print("action_saveRefPosToEeprom");
 
-			// Write actual motor position as ref pos to eeprom (byte 0 and 1)
-			// TODO: Save negative or positive sign
+			// Send data (1. byte: soll_angle, 2. byte: save-action)
+			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
+			i2c_data_out[0] = 0;
+			i2c_data_out[1] = 1;
 
-			//Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
-
-			//while (Wire.available()) {
-			//	motorAngle = Wire.read(); // receive a byte as character
-			//	Serial.print("Ref pos from i2c: ");
-			//	Serial.println(motorAngle);
-			//}
-
-			EEPROM.update(eeprom_addr_ref_pos_1, lowByte(motorAngle));
-			EEPROM.update(eeprom_addr_ref_pos_2, highByte(motorAngle));
-
-			// Validate writing and reset state if position is written to eeprom
-			if ((EEPROM.read(eeprom_addr_ref_pos_1) == lowByte(encoderValue)) & (EEPROM.read(eeprom_addr_ref_pos_2) == highByte(encoderValue))) {
-
-				// Save ref pos value to local variable
-				ref_pos.bytes[0] = lowByte(motorAngle);
-				ref_pos.bytes[1] = highByte(motorAngle);
-
-				// TODO: Validate ref pos value (maybe flip the bytes)
-				if (debugMode)
-				{
-					Serial.print("ref_pos.data new: ");
-					Serial.println(ref_pos.data);
-				}
-
-				outgoing_data[out_actionState] = state_complete;
-				EEPROM.update(eeprom_addr_error, error_ok);
-				Serial.println("eeprom");
-			}
-			else EEPROM.update(eeprom_addr_error, error_eeprom_ref_pos); // If there is an error the pending state will never change to complete 
+			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
+			Wire.write(i2c_data_out, 2);
+			Wire.endTransmission();
 		}
 
 		// Work on action <safe actual position to eeprom>
 		if ((!lockAction) & (incoming_data[in_action] == action_saveActPosToEeprom))
 		{
-			// Store actual encoder value to eeprom when raspberry pi is off or if someone reset the input signal
-			// Arduino maybe gets the rest of power from a condensator
+			// Send data (1. byte: soll_angle, 2. byte: save-action)
+			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
+			i2c_data_out[0] = 0;
+			i2c_data_out[1] = 2;
 
-			lockAction = true;
-			// Write actual motor position to eeprom
-
-			//Wire.requestFrom(8, 2);    // request 2 bytes from slave device #8
-
-			//while (Wire.available()) {
-			//	motorAngle = Wire.read(); // receive a byte as character
-			//	Serial.print("Act pos from i2c: ");
-			//	Serial.println(motorAngle);
-			//}
-
-			EEPROM.update(eeprom_addr_act_pos_1, lowByte(motorAngle));
-			EEPROM.update(eeprom_addr_act_pos_2, highByte(motorAngle));
-
-			ist_motorAngle.bytes[0] = EEPROM.read(eeprom_addr_act_pos_1);
-			ist_motorAngle.bytes[1] = EEPROM.read(eeprom_addr_act_pos_2);
-			encoderValue = ist_motorAngle.data;
-
-			// Validate writing 
-			// Store ok byte to eeprom (and read this at startup to validate)
-			if ((EEPROM.read(eeprom_addr_act_pos_1) == lowByte(motorAngle)) & (EEPROM.read(eeprom_addr_act_pos_2) == highByte(motorAngle))) EEPROM.update(eeprom_addr_error, error_ok);
-			else EEPROM.update(eeprom_addr_error, error_eeprom_act_pos);
-			// TODO
-			// Validate act pos value (maybe flip the bytes)
-			//Serial.print("encoderValue di_powerOn: ");
-			//Serial.println(encoderValue);
+			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
+			Wire.write(i2c_data_out, 2);
+			Wire.endTransmission();
 		}
 
 		// Work on action <disablePidController>
@@ -323,10 +241,17 @@ void loop()
 			if (incoming_data[in_motorDir] == 0) digitalWrite(do_motorDirection1, LOW);
 			else digitalWrite(do_motorDirection1, HIGH);
 
-			// Send soll angle via I2C bus
-			// TODO: Send 2 bytes of soll angle data
-			Wire.beginTransmission(8); 
-			Wire.write((int)soll_motor_angle_temp); // Send 1 byte
+			// Send data (1. byte: soll_angle, 2. byte: save-action)
+			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
+			i2c_data_out[0] = (byte)soll_motor_angle_temp;
+			i2c_data_out[1] = 0;
+
+			//Serial.print("soll_motor_angle_temp: ");
+			//if(incoming_data[in_motorDir] == 0) Serial.println(-soll_motor_angle_temp);
+			//else Serial.println(soll_motor_angle_temp);
+
+			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
+			Wire.write(i2c_data_out, 2);
 			Wire.endTransmission();
 		}
 	}

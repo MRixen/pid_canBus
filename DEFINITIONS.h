@@ -9,6 +9,11 @@
 #define do_pwm 9
 #define do_csArduino 10
 
+#define I2C_ID_CAN_BUS 7
+#define I2C_ID_PID_CONTROLLER 8
+#define I2C_ID_MONITOR 9
+
+int current_motor_angle = 0;
 int motorAngle = 0;
 double soll_motor_angle_temp = 0; // deg
 double const SAMPLE_TIME = 0.05; // s

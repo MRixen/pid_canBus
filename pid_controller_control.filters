@@ -19,9 +19,6 @@
     <None Include="pid_canBus.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.pid_controller_control.vsarduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MCP2515.h">
       <Filter>Header Files</Filter>
     </ClInclude>
