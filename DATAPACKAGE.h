@@ -36,7 +36,7 @@ union controlData
 
 controlData soll_motorAngle, ist_motorAngle, ref_pos;
 byte i2c_data_out[5] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-int motorVel;
+short soll_motorSpeed;
 
 
 enum EepromAddresses

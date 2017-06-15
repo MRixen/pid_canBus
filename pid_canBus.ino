@@ -7,7 +7,7 @@
 
 // ------------------------------------
 // Controlling motors with id 
-int motorId = 1; // Motor id (its NOT possible to use the same idetifier for two devices in the bus
+int motorId = 3; // Motor id (its NOT possible to use the same idetifier for two devices in the bus
 // ------------------------------------
 
 // !!!! NOTE !!!!
@@ -56,19 +56,19 @@ void setup()
 		break;
 	case 5:
 		REGISTER_TXB0SIDL_VALUE = 0x60;
-		REGISTER_TXB0SIDH_VALUE = 0x03;
+		REGISTER_TXB0SIDH_VALUE = 0x05;
 		REGISTER_TXB1SIDL_VALUE = 0x60;
-		REGISTER_TXB1SIDH_VALUE = 0x03;
+		REGISTER_TXB1SIDH_VALUE = 0x05;
 		REGISTER_TXB2SIDL_VALUE = 0x60;
-		REGISTER_TXB2SIDH_VALUE = 0x03;
+		REGISTER_TXB2SIDH_VALUE = 0x05;
 		break;
 	case 6:
 		REGISTER_TXB0SIDL_VALUE = 0x80;
-		REGISTER_TXB0SIDH_VALUE = 0x04;
+		REGISTER_TXB0SIDH_VALUE = 0x06;
 		REGISTER_TXB1SIDL_VALUE = 0x80;
-		REGISTER_TXB1SIDH_VALUE = 0x04;
+		REGISTER_TXB1SIDH_VALUE = 0x06;
 		REGISTER_TXB2SIDL_VALUE = 0x80;
-		REGISTER_TXB2SIDH_VALUE = 0x04;
+		REGISTER_TXB2SIDH_VALUE = 0x06;
 		break;
 	default:
 		break;
@@ -165,9 +165,10 @@ void loop()
 			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
 			i2c_data_out[0] = 0;
 			i2c_data_out[1] = 0;
+			i2c_data_out[2] = 0;
 
 			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
-			Wire.write(i2c_data_out, 2);
+			Wire.write(i2c_data_out, 3);
 			Wire.endTransmission();
 		}
 
@@ -194,9 +195,10 @@ void loop()
 			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
 			i2c_data_out[0] = 0;
 			i2c_data_out[1] = 1;
+			i2c_data_out[2] = 0;
 
 			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
-			Wire.write(i2c_data_out, 2);
+			Wire.write(i2c_data_out, 3);
 			Wire.endTransmission();
 		}
 
@@ -207,9 +209,10 @@ void loop()
 			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
 			i2c_data_out[0] = 0;
 			i2c_data_out[1] = 2;
+			i2c_data_out[2] = 0;
 
 			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
-			Wire.write(i2c_data_out, 2);
+			Wire.write(i2c_data_out, 3);
 			Wire.endTransmission();
 		}
 
@@ -232,26 +235,30 @@ void loop()
 		// Work on action <newPosition>
 		if ((incoming_data[in_action] == action_newPosition))
 		{
-			// Convert byte to short 
+			// Get soll angle 
 			soll_motorAngle.bytes[0] = incoming_data[in_angle_2];
 			soll_motorAngle.bytes[1] = incoming_data[in_angle_1];
 			soll_motor_angle_temp = soll_motorAngle.data + ref_pos.data;
+
+			// Get velocity
+			soll_motorSpeed = incoming_data[in_velocity];
 
 			// Set sign for the soll angle value (0 negative / 1 positive)
 			if (incoming_data[in_motorDir] == 0) digitalWrite(do_motorDirection1, LOW);
 			else digitalWrite(do_motorDirection1, HIGH);
 
-			// Send data (1. byte: soll_angle, 2. byte: save-action)
+			// Send data (1. byte: soll_angle, 2. byte: save-action, 3. byte: speed)
 			// Possible actions: 0: Nothing to do, 1: Save ref pos, 2: Save act pos
 			i2c_data_out[0] = (byte)soll_motor_angle_temp;
 			i2c_data_out[1] = 0;
+			i2c_data_out[2] = soll_motorSpeed;
 
 			//Serial.print("soll_motor_angle_temp: ");
 			//if(incoming_data[in_motorDir] == 0) Serial.println(-soll_motor_angle_temp);
 			//else Serial.println(soll_motor_angle_temp);
 
 			Wire.beginTransmission(I2C_ID_PID_CONTROLLER);
-			Wire.write(i2c_data_out, 2);
+			Wire.write(i2c_data_out, 3);
 			Wire.endTransmission();
 		}
 	}
