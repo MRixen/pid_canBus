@@ -5,7 +5,7 @@ void mcp2515_init_tx_buffer0(byte identifierLow, byte identifierHigh, byte messa
 	mcp2515_execute_write_command(REGISTER_TXB0SIDL, identifierLow, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
-	mcp2515_execute_write_command(REGISTER_TXB0SIDH, identifierHigh, do_csMcp2515);
+	//mcp2515_execute_write_command(REGISTER_TXB0SIDH, identifierHigh, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
 	mcp2515_execute_write_command(REGISTER_TXB0DLC, messageSize, do_csMcp2515);
@@ -17,7 +17,7 @@ void mcp2515_init_tx_buffer1(byte identifierLow, byte identifierHigh, byte messa
 	mcp2515_execute_write_command(REGISTER_TXB1SIDL, identifierLow, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
-	mcp2515_execute_write_command(REGISTER_TXB1SIDH, identifierHigh, do_csMcp2515);
+	//mcp2515_execute_write_command(REGISTER_TXB1SIDH, identifierHigh, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
 	mcp2515_execute_write_command(REGISTER_TXB1DLC, messageSize, do_csMcp2515);
@@ -29,7 +29,7 @@ void mcp2515_init_tx_buffer2(byte identifierLow, byte identifierHigh, byte messa
 	mcp2515_execute_write_command(REGISTER_TXB2SIDL, identifierLow, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
-	mcp2515_execute_write_command(REGISTER_TXB2SIDH, identifierHigh, do_csMcp2515);
+	//mcp2515_execute_write_command(REGISTER_TXB2SIDH, identifierHigh, do_csMcp2515);
 
 	// Set data length and set rtr bit to zero (no remote request)
 	mcp2515_execute_write_command(REGISTER_TXB2DLC, messageSize, do_csMcp2515);
@@ -44,6 +44,9 @@ void initMcp2515() {
 
 	// Configure interrupts
 	mcp2515_configureInterrupts();
+
+	// Configure masks and filters
+	mcp2515_configureMasksFilters();
 
 	// Set device to normal mode
 	mcp2515_switchMode(REGISTER_CANSTAT_NORMAL_MODE, REGISTER_CANCTRL_NORMAL_MODE);
@@ -86,13 +89,29 @@ void mcp2515_configureInterrupts() {
 	if (debugMode) Serial.println("Mcp2515 configure interrupts succesfully");
 }
 
-void mcp2515_configureMasksFilters(byte registerAddress, byte registerValue) {
+void mcp2515_configureMasksFilters() {
 
-	// Set parameters for rx buffer 0
+	// Set parameters for rx buffer 0 (which filter to use)
 	mcp2515_execute_write_command(REGISTER_RXB0CTRL, REGISTER_RXB0CTRL_VALUE, do_csMcp2515);
 
-	// Set parameters for rx buffer 1
+	// Set parameters for rx buffer 1 (which filter to use)
 	mcp2515_execute_write_command(REGISTER_RXB1CTRL, REGISTER_RXB1CTRL_VALUE, do_csMcp2515);
+
+	// Configure filter for rx buffer 0 (Receive messages with standard identifier 0x40)
+	REGISTER_RXF1SIDL_VALUE = 0x40;
+	mcp2515_execute_write_command(REGISTER_RXF1SIDL, REGISTER_RXF1SIDL_VALUE, do_csMcp2515);
+
+	// Configure filter for rx buffer 1 (Receive messages with standard identifier 0x40)
+	REGISTER_RXF2SIDL_VALUE = 0x40;
+	mcp2515_execute_write_command(REGISTER_RXF2SIDL, REGISTER_RXF2SIDL_VALUE, do_csMcp2515);
+
+	// Configure mask for rx buffer 0
+	mcp2515_execute_write_command(REGISTER_RXM0SIDL, REGISTER_RXM0SIDL_VALUE, do_csMcp2515);
+	mcp2515_execute_write_command(REGISTER_RXM0SIDH, REGISTER_RXM0SIDH_VALUE, do_csMcp2515);
+
+	// Configure mask for rx buffer 1
+	mcp2515_execute_write_command(REGISTER_RXM1SIDL, REGISTER_RXM1SIDL_VALUE, do_csMcp2515);
+	mcp2515_execute_write_command(REGISTER_RXM1SIDH, REGISTER_RXM1SIDH_VALUE, do_csMcp2515);
 }
 
 void mcp2515_configureRxBuffer() {
@@ -343,10 +362,10 @@ bool readControlValue(byte bufferId, int cs_pin)
 		incoming_data[i] = SPI.transfer(0x00);
 
 		// DEBUG
-		//Serial.print("incoming ");
-		//Serial.print(i);
-		//Serial.print(": ");
-		//Serial.println(incoming_data[i]);
+		Serial.print("incoming ");
+		Serial.print(i);
+		Serial.print(": ");
+		Serial.println(incoming_data[i]);
 	}
 	setCsPin(cs_pin, HIGH);
 	//delay(SLOW_DOWN_CODE);

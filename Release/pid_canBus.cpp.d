@@ -1,5 +1,5 @@
-C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Debug\pid_canBus.cpp.o: \
- C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Debug\pid_canBus.cpp \
+C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Release\pid_canBus.cpp.o: \
+ C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Release\pid_canBus.cpp \
  C:\Program\ Files\ (x86)\arduino-1.6.9\hardware\arduino\avr\cores\arduino/arduino.h \
  C:\Program\ Files\ (x86)\arduino-1.6.9\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\arduino-1.6.9\hardware\arduino\avr\cores\arduino/WCharacter.h \
@@ -18,6 +18,5 @@ C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Debug\pid_canBus.cpp
  C:\Program\ Files\ (x86)\arduino-1.6.9\libraries\CAN_BUS_Shield-master/mcp_can.h \
  C:\Program\ Files\ (x86)\arduino-1.6.9\libraries\CAN_BUS_Shield-master/mcp_can_dfs.h \
  C:\Program\ Files\ (x86)\arduino-1.6.9\hardware\arduino\avr\libraries\EEPROM\src/EEPROM.h \
- C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Debug\DEFINITIONS.h \
- C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Debug\MCP2515.h \
- C:\Program\ Files\ (x86)\Microsoft\ Visual\ Studio\2017\Community\Common7\IDE\Extensions\02oghilb.30b\Micro\ Platforms\default\debuggers\VM_DBG/VM_DBG.h
+ C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Release\DEFINITIONS.h \
+ C:\Users\M.Rixen\AppData\Local\Temp\VMBuilds\pid_canBus\uno\Release\MCP2515.h
